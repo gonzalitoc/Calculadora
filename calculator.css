@@ -1,0 +1,49 @@
+body * {
+  font-family: sans-serif;
+}
+
+form {
+  width: 230px;
+}
+
+.input {
+  border: none;
+  font-size: 50px;
+  font-weight: 100;
+  color: #fff;
+  padding: 0;
+  width: 100%;
+  background-color: #1a1f28;
+  text-align: right;
+  position: relative;
+}
+
+.button {
+  background-color: #6f7171;
+  border: 0.05px solid #404040;
+  cursor: pointer;
+  width: calc(230px / 4);
+  font-size: 28px;
+  color: #fff;
+  padding: 8px 0;
+}
+
+.button:active {
+  background-color: #a2a4a4;
+}
+
+.button:nth-child(4n + 5) {
+  background-color: rgb(235, 168, 51);
+}
+
+.button:nth-child(4n + 5):active {
+  background-color: #70737599;
+}
+
+.button:nth-child(-n + 4) {
+  background-color: #383a3f;
+}
+
+.button:nth-child(-n + 4):active {
+  background-color: #828686;
+}
