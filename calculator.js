@@ -1,5 +1,3 @@
-//https://mikemcl.github.io/big.js/#
-
 (function (fn) {
   if (document.readyState !== "loading") {
     fn();
@@ -8,130 +6,84 @@
   }
 })(renderView);
 
-// lookup tables
-const chars = {
-  0: "AC",
-  1: "C",
-  2: "%",
-  3: "/",
-  4: "7",
-  5: "8",
-  6: "9",
-  7: "x",
-  8: "4",
-  9: "5",
-  10: "6",
-  11: "-",
-  12: "1",
-  13: "2",
-  14: "3",
-  15: "+",
-  16: "0",
-  17: ".",
-  18: "+/-",
-  19: "=",
-};
+const chars = [
+  "AC", "C", "%", "/", "7", "8", "9", "x",
+  "4", "5", "6", "-", "1", "2", "3", "+",
+  "0", ".", "+/-", "="
+];
 
-const operators = ["+", "-", "/", "x", "=", "%"];
+const operators = new Set(["+", "-", "/", "x", "=", "%"]);
 
-function renderView(event) {
-  const body = document.querySelector("body");
+function renderView() {
+  const body = document.body;
   const form = document.createElement("form");
   const input = document.createElement("input");
 
-  body.appendChild(form);
-  form.appendChild(input);
   input.className = "input";
   input.disabled = true;
   input.value = "0";
-  for (let i = 0; i < 20; i++) {
+
+  form.appendChild(input);
+  chars.forEach(char => {
     const button = document.createElement("button");
-
-    form.appendChild(button);
-
     button.type = "button";
-
     button.className = "button";
-
-    button.textContent = chars[i];
-  }
+    button.textContent = char;
+    form.appendChild(button);
+  });
+  
+  body.appendChild(form);
 
   form.addEventListener("click", function (e) {
-    if (e.target.tagName === "BUTTON") {
-      const { textContent } = e.target;
+    if (e.target.tagName !== "BUTTON") return;
 
-      if (operators.includes(textContent)) {
-        if (textContent === "=") {
-          const operator = e.currentTarget.dataset.operator;
-          const secondValue = e.currentTarget.dataset.value;
-          const currentValue = input.value;
+    const text = e.target.textContent;
+    let { operator, value } = form.dataset;
 
-          if (operator && secondValue !== undefined) {
-            const number = new Big(Number(secondValue));
-            let result;
-
-            if (operator === "+") {
-              result = number.plus(Number(currentValue));
-            } else if (operator === "-") {
-              result = number.minus(Number(currentValue));
-            } else if (operator === "x") {
-              result = number.times(Number(currentValue));
-            } else if (operator === "/") {
-              result = number.div(Number(currentValue));
-            }
-
-            input.value =
-              result.e >= 15 ? result.toExponential() : result.toNumber();
-            e.currentTarget.removeAttribute("data-operator");
-            e.currentTarget.removeAttribute("data-value");
+    if (operators.has(text)) {
+      if (text === "=") {
+        if (operator && value) {
+          let expression = value + operator.replace("x", "*") + input.value;
+          try {
+            let result = new Big(eval(expression));
+            input.value = result.e >= 15 ? result.toExponential() : result.toString();
+            delete form.dataset.operator;
+            delete form.dataset.value;
+          } catch (error) {
+            input.value = "Error";
           }
-
-          e.currentTarget.removeAttribute("data-equal");
-
-          return;
-        } else if (textContent === "%") {
-          const porcentaje = Number(input.value) / 100;
-          input.value = porcentaje;
-          return;
-        } else {
-          e.currentTarget.setAttribute("data-operator", textContent);
-          e.currentTarget.setAttribute("data-value", input.value);
-          input.value = "";
-          return;
         }
-      }
-
-      if (textContent === ".") {
-        if (!input.value.includes(".")) {
-          input.value += textContent;
-        }
-        return;
-      }
-
-      if (textContent === "+/-") {
-        if (input.value !== "0") {
-          input.value = input.value.startsWith("-")
-            ? input.value.slice(1)
-            : `-${input.value}`;
-        }
-        return;
-      }
-
-      if (textContent === "AC" || textContent === "C") {
-        input.value = "0";
-        e.currentTarget.removeAttribute("data-operator");
-        e.currentTarget.removeAttribute("data-value");
-        e.currentTarget.removeAttribute("data-equal");
-        return;
-      }
-
-      if (e.currentTarget.dataset.equal === "=") {
-        input.value = textContent;
-        e.currentTarget.removeAttribute("data-equal");
+      } else if (text === "%") {
+        input.value = new Big(input.value).div(100).toString();
       } else {
-        input.value =
-          input.value === "0" ? textContent : input.value + textContent;
+        if (operator) {
+          form.dataset.value = value + operator.replace("x", "*") + input.value;
+        } else {
+          form.dataset.value = input.value;
+        }
+        form.dataset.operator = text;
+        input.value = "";
       }
+      return;
     }
+
+    if (text === "." && !input.value.includes(".")) {
+      input.value += text;
+      return;
+    }
+
+    if (text === "+/-") {
+      input.value = input.value.startsWith("-") ? input.value.slice(1) : "-" + input.value;
+      return;
+    }
+
+    if (text === "AC" || text === "C") {
+      input.value = "0";
+      delete form.dataset.operator;
+      delete form.dataset.value;
+      return;
+    }
+
+    input.value = input.value === "0" ? text : input.value + text;
   });
 }
